@@ -21,21 +21,20 @@ def Cov(datasets):
 
 def OD_Cov(datasets):
     '''
-    OD_Covを計算する
+    Calculate Object Detection Coverage
     @param datasets:list
     @return OD-Cov:float
     '''
     def ODCov_Image(dataset):
         '''
-        画像内のすべての推論の数に対する、すべてのモデルでエラーとなった推論の割合
+        Calculate coverage for single image
         @args dataset
         @return float
         '''
-        numObj = Objects_of_All_Model(dataset) # 画像内のすべての推論の数 
+        numObj = Objects_of_All_Model(dataset) # Total number of inferences in the image
         if numObj == 0:
             return 0
-        numErr = Error_of_All_Model(dataset) # すべてのモデルのエラー空間に含まれる推論の数
-        # print(numErr)
+        numErr = Error_of_All_Model(dataset) # Number of inferences included in error space of all models
         return numErr/numObj
     I = 0
     num_image = len(datasets)
@@ -63,13 +62,13 @@ def Cer(datasets):
 
 def OD_Cer(datasets):
     '''
-    OD_Cerを計算する
+    Calculate Object Detection Certainty
     @args datasets
     @return OD_Cer:float
     '''
     def ODCer_Image(dataset):
         '''
-        画像内のすべての推論の数に対する、いずれかのモデルでエラーとなった推論の割合
+        Ratio of inferences that are errors in any model to total number of inferences in the image
         '''
         numObj = Objects_of_All_Model(dataset)
         if numObj == 0:

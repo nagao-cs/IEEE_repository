@@ -5,8 +5,8 @@ from object import Object
 
 
 '''
-@param: DirectoryPath:str -> 検出結果のディレクトリパス
-@return: list[objects] -> 検出結果のTimeIdごとのリスト
+@param: DirectoryPath:str -> Directory Path to detection results
+@return: list[objects] -> List of Detection results
 '''
 def GetDetectObject(DirectoryPath, CameraID):
     ImagePaths = os.listdir(DirectoryPath)
@@ -19,7 +19,7 @@ def GetDetectObject(DirectoryPath, CameraID):
                 data = line.strip().split(',')
                 if len(data) == 8:
                     obj = Object(*data)
-                    # if obj.category >= 13 or obj.category == 10:
+                    # valid object class
                     if obj.category not in [0, 1, 2, 9, 11]:
                         continue
                     obj.CameraID(CameraID)
@@ -28,8 +28,8 @@ def GetDetectObject(DirectoryPath, CameraID):
     return ObjectsList
 
 '''
-@param: list[DirectoryPath] -> ディレクトリパスのリスト
-@return: list[dataset] -> データセット
+@param: list[DirectoryPath] -> List of Path to detection results
+@return: list[dataset] -> Dataset
 '''
 def MakeDataset(Directory_paths):
     datasets = list()
@@ -39,6 +39,5 @@ def MakeDataset(Directory_paths):
         datasets.append(Objects)
         CameraID += 1
     
-    # 三つのリストの同じインデックスの要素を要素とするデータセットを作成
     datasets = list(zip(*datasets))
     return datasets

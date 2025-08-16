@@ -7,17 +7,17 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 def bestCombination(paths, numConb):
-    # 各指標のすべての組み合わせとスコアを記録する辞書
+    # Dictionary to store combinations and scores for each metric
     rankings = {
         'Cov': [], 'Cer': [], 
         'OD-Cov': [], 'OD-Cer': [],
     }
     
-    # 7つのパスからnumCombの組み合わせを生成
+    # Generate combinations of numConb cameras from paths
     for combination in itertools.combinations(paths, numConb):
         datasets = MakeDataset(combination)
         
-        # 各指標の計算
+        # Calculate metrics
         scores = {
             'Cov': Cov(datasets),
             'Cer': Cer(datasets),
@@ -25,14 +25,14 @@ def bestCombination(paths, numConb):
             'OD-Cer': OD_Cer(datasets),
         }
         
-        # 各指標について、組み合わせとスコアを記録
+        # Record combinations and scores for each metric
         for key, score in scores.items():
             rankings[key].append({
                 'combination': combination,
                 'score': score
             })
     
-    # 各指標についてスコアでソートし、上位10件を取得
+    # Sort by score and get top 10 for each metric
     top_10_rankings = {}
     for key in rankings.keys():
         sorted_combinations = sorted(rankings[key], 
@@ -57,9 +57,9 @@ if __name__ == '__main__':
     numConb = 3
     rankings = bestCombination(paths, numConb)
     
-    # 結果の表示
+    # Display results
     for metric, top_10 in rankings.items():
-        print(f"\n{metric}のTop 10:")
+        print(f"\nTop 10 for {metric}:")
         for i, result in enumerate(top_10, 1):
             combination = [os.path.basename(path) for path in result['combination']]
-            print(f"{i}位: スコア: {result['score']:.3f}, 組み合わせ: {combination}")
+            print(f"Rank {i}: Score: {result['score']:.3f}, Combination: {combination}")

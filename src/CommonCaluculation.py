@@ -3,7 +3,7 @@ IoU_Threshold = 0.5
 # boxA=[xmin, ymin, width, height]
 def IoU(boxA, boxB):
     '''
-    二つのbboxのIoUを計算する
+    Calculate IoU between two bounding boxes
     '''
     ax_mn, ay_mn, ax_mx, ay_mx = boxA[0], boxA[1], boxA[2]+boxA[0], boxA[3]+boxA[1]
     bx_mn, by_mn, bx_mx, by_mx = boxB[0], boxB[1], boxB[2]+boxB[0], boxB[3]+boxB[1]
@@ -24,9 +24,9 @@ def IoU(boxA, boxB):
 
 def extract_infer(dataset, mode):
     '''
-    特定の推論を抽出する
+    Extract specific inferences from dataset
     @args: dataset, mode
-    @return infer:list -> 特定の推論
+    @return infer:list -> List of specific inferences
     '''
     infer = list()
     
@@ -46,9 +46,9 @@ def extract_infer(dataset, mode):
 
 def count_matches(infers, match_threshold):
     '''
-    一つの推論に対して、一致する推論の数を数える
+    Count the number of matching inferences for a single inference
     @args: infer, match_threshold
-    @return numMatch:int -> 一致する推論の数
+    @return numMatch:int -> Number of matching inferences
     '''
     numMatch = 0
     processed = set()
@@ -122,9 +122,9 @@ def count_matches(infers, match_threshold):
        
 def Error_of_All_Model(dataset):
     '''
-    すべての物体検出モデルのエラー空間に含まれる推論の数
+    Calculate number of inferences included in error space of all models
     @args: dataset
-    @return numErr:int -> すべてのモデルのエラー空間に含まれるFPとFNの和
+    @return numErr:int -> Sum of FP and FN included in error space of all models
     '''
     numModel = len(dataset)
     FP = extract_infer(dataset, 'FP')
@@ -137,9 +137,9 @@ def Error_of_All_Model(dataset):
 
 def Error_of_Each_Model(dataset):
     '''
-    画像内のいずれかのモデルのエラー空間に含まれる推論の数
+    Calculate number of inferences included in error space of any model
     @args: dataset
-    @return numErr:int -> 画像内のいずれかのモデルのエラー空間に含まれるFPとFNの和
+    @return numErr:int -> Sum of FP and FN included in error space of any model
     '''
     FP = extract_infer(dataset, 'FP')
     FN = extract_infer(dataset, 'FN')
@@ -153,16 +153,14 @@ def Error_of_Each_Model(dataset):
 
 def TP_of_All_Model(dataset):
     '''
-    すべてのモデルのTPの数を計算する
+    Calculate number of True Positives for all models
     @args: dataset
-    @return numTP:int -> すべてのモデルのTPの数
+    @return numTP:int -> Number of TPs for all models
     '''
     numModel = len(dataset)
 
-    # TPに該当する推論を収集
     TP = extract_infer(dataset, 'TP')
 
-    # すべてのモデルでTPとなった推論を数える
     numTP = count_matches(TP, match_threshold=numModel)
 
     return numTP
@@ -182,24 +180,24 @@ def TP_of_Each_Model(dataset):
 
 def TN_of_Each_Model(dataset):
     '''
-    画像内のいずれかのモデルのTNの数を計算する
+    Calculate number of True Positives for any model
     @args: dataset
-    @return numTN:int -> 画像内のいずれかのモデルのTNの数
+    @return numTP:int -> Number of TPs for any model
     '''
     numModel = len(dataset)
     FP = extract_infer(dataset, 'FP')
     FN = extract_infer(dataset, 'FN')
 
     numTN = 0
-    processed_FP = set()  # 処理済みTNの追跡
+    processed_FP = set() 
     for infer in FP:
         if infer in processed_FP:
-            continue  # 既に処理済みならスキップ
+            continue
         boxA = [infer.X_coordinate, infer.Y_coordinate, infer.width, infer.height]
-        ismatch = 1  # 同じ位置の一致数
+        ismatch = 1
         for comp in FP:
             if (comp in processed_FP) or (infer.CameraID == comp.CameraID):
-                continue  # 同一物体または既処理物体をスキップ
+                continue
             boxB = [comp.X_coordinate, comp.Y_coordinate, comp.width, comp.height]
             if IoU(boxA, boxB) > IoU_Threshold:
                 ismatch += 1
@@ -208,17 +206,17 @@ def TN_of_Each_Model(dataset):
             numTN += 1
         processed_FP.add(infer)
     
-    processed_FN = set()  # 処理済みFNの追跡
+    processed_FN = set()
     for infer in FN:
         if infer in processed_FN:
-            continue  # 既に処理済みならスキップ
-        ismatch = 1  # 同じカテゴリの一致数
+            continue
+        ismatch = 1
         ctg = infer.category
         processed_camera = set()
         processed_camera.add(infer.CameraID)
         for comp in FN:
             if (infer == comp) or (comp in processed_FN) or (comp.CameraID in processed_camera):
-                continue  # 同一物体または既処理物体をスキップ
+                continue
             if comp.category == ctg:
                 ismatch += 1
                 processed_FN.add(comp)
@@ -231,9 +229,9 @@ def TN_of_Each_Model(dataset):
  
 def FP_of_All_Model(dataset):
     '''
-    すべてのモデルのFPの数を計算する
+    Calculate number of False Positives for all models
     @args: dataset
-    @return numFP:int -> すべてのモデルのFPの数
+    @return numFP:int -> Number of FPs for all models
     '''
     numModel = len(dataset)
     FP = extract_infer(dataset, 'FP')
@@ -244,9 +242,9 @@ def FP_of_All_Model(dataset):
 
 def FP_of_Each_Model(dataset):
     '''
-    画像内のいずれかのモデルのFPの数を計算する
+    Calculate number of False Positives for any model
     @args: dataset
-    @return numFP:int -> 画像内のいずれかのモデルのFPの数
+    @return numFP:int -> Number of FPs for any model
     '''
     FP = extract_infer(dataset, 'FP')
     numFP = count_matches(FP, match_threshold=1)
@@ -255,9 +253,9 @@ def FP_of_Each_Model(dataset):
 
 def FN_of_All_Model(dataset):
     '''
-    すべてのモデルのFNの数を計算する
+    Calculate number of False Negatives for all models
     @args: dataset
-    @return numFN:int -> すべてのモデルのFNの数
+    @return numFN:int -> Number of FNs for all models
     '''
     numModel = len(dataset)
     FN = extract_infer(dataset, 'FN')
@@ -268,9 +266,9 @@ def FN_of_All_Model(dataset):
 
 def FN_of_Each_Model(dataset):
     '''
-    画像内のいずれかのモデルのFNの数を計算する
+    Calculate number of False Negatives for any model
     @args: dataset
-    @return numFN:int -> 画像内のいずれかのモデルのFNの数
+    @return numFN:int -> Number of FNs for any model
     '''
     FN = extract_infer(dataset, 'FN')
         
@@ -280,8 +278,8 @@ def FN_of_Each_Model(dataset):
 
 def Objects_of_All_Model(dataset) -> int:
     """
-    ある画像内のすべての推論の数を計算する
+    Calculate total number of inferences in an image
     @args: dataset
-    @return numObj:int -> ある画像内のすべての推論の数
+    @return numObj:int -> Total number of inferences in an image
     """
     return TP_of_All_Model(dataset) + Error_of_Each_Model(dataset)

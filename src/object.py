@@ -15,7 +15,7 @@ class Object:
             else :
                 print(isTrue, type(isTrue))
                 raise SyntaxError('dataset error')
-        except ValueError: #推論できなかった物体の処理
+        except ValueError: 
             self.X_coordinate = float('nan')
             self.Y_coordinate = float('nan')
             self.width = float('nan')

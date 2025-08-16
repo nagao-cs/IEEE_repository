@@ -3,18 +3,18 @@ from Ensemble import Ensemble
 from CommonCaluculation import *
 
 '''
-@param: dataset, MV_Threshold -> データセットといくつ以上の推論で推論結果に追加するかの閾値
-@return: numTP,numFP,numFN
-複数モデルの推論を多数決で統合する
+@param: dataset - List of detection results from each model
+@param: MV_Threshold - Threshold for how many inferences to include in the result
+@return: numTP, numFP, numFN - Count of True Positives, False Positives, False Negatives after majority voting
 '''
 def MajorityVoting_TP(dataset, MV_Threshold) -> int:
     """
-    TPに該当する推論を多数決で統合する。
-    @param dataset: 各モデルの推論結果を格納したリスト
-    @param MV_Threshold: int - 多数決で採用するモデル数の閾値
-    @return numTP: int - 閾値を満たしたTPの数
+    Combine True Positive inferences using majority voting
+    @param dataset: List containing inference results from each model
+    @param MV_Threshold: int - Threshold for number of models required to adopt an inference
+    @return numTP: int - Number of TPs meeting the threshold
     """
-    # datasetからTPにあたる推論をすべて収集
+    # Collect all TP inferences from dataset
     TP = list()
     for model in dataset:
         for infer in model:
@@ -25,31 +25,31 @@ def MajorityVoting_TP(dataset, MV_Threshold) -> int:
     processed = set()
     numModel = len(dataset)
 
-    # TPの内、閾値以上のモデルが同じ推論をした数をカウント
+    # Count inferences that match across threshold number of models
     while TP:
         infer = TP.pop(0)
         processed_camera = set()
         processed_camera.add(infer.CameraID)
         if infer in processed:
-            continue  # 処理済みの推論はスキップ
+            continue  # Skip already processed inferences
 
         numMatch = 1
         boxA = [infer.X_coordinate, infer.Y_coordinate, infer.width, infer.height]
 
-        for comp in TP[:]:  # コピーを使うことで安全に削除可能
+        for comp in TP[:]:  # Use copy for safe deletion
             if (infer.CameraID == comp.CameraID) or (comp in processed) or (comp.CameraID in processed_camera):
-                continue  # 同じモデルの推論または処理済みの場合はスキップ
+                continue  # Skip inferences from same model or already processed ones
 
             boxB = [comp.X_coordinate, comp.Y_coordinate, comp.width, comp.height]
             if (IoU(boxA, boxB) > IoU_Threshold) and (infer.category == comp.category):
                 numMatch += 1
-                processed.add(comp)  # 同じ推論を処理済みに追加
+                processed.add(comp)  # Add matching inference to processed set
                 processed_camera.add(comp.CameraID)
-                TP.remove(comp)  # リストから削除
+                TP.remove(comp)  # Remove from list
                 if numMatch == numModel:
                     break
 
-        processed.add(infer)  # 現在の推論も処理済みに追加
+        processed.add(infer)  # Add current inference to processed set
 
         if numMatch >= MV_Threshold:
             numTP += 1
@@ -58,12 +58,12 @@ def MajorityVoting_TP(dataset, MV_Threshold) -> int:
 
 def MajorityVoting_FP(dataset, MV_Threshold) -> int:
     """
-    FPに該当する推論を多数決で統合する。
-    @param dataset: 各モデルの推論結果を格納したリスト
-    @param MV_Threshold: int - 多数決で採用するモデル数の閾値
-    @return numFP: int - 閾値を満たしたFPの数
+    Combine False Positive inferences using majority voting
+    @param dataset: List containing inference results from each model
+    @param MV_Threshold: int - Threshold for number of models required to adopt an inference
+    @return numFP: int - Number of FPs meeting the threshold
     """
-    # datasetからFPにあたる推論をすべて収集
+    # Collect all FP inferences from dataset
     FP = list()
     for model in dataset:
         for infer in model:
@@ -73,26 +73,26 @@ def MajorityVoting_FP(dataset, MV_Threshold) -> int:
     numFP = 0
     processed = set()
 
-    # FPの内、閾値以上のモデルが同じ推論をした数をカウント
+    # Count FPs that match across threshold number of models
     while FP:
         infer = FP.pop(0)
         if infer in processed:
-            continue  # 処理済みの推論はスキップ
+            continue  # Skip already processed inferences
 
         numMatch = 1
         boxA = [infer.X_coordinate, infer.Y_coordinate, infer.width, infer.height]
 
-        for comp in FP[:]:  # コピーを使って安全に削除
+        for comp in FP[:]:  # Use copy for safe deletion
             if (infer.CameraID == comp.CameraID) or (comp in processed):
-                continue  # 同じモデルの推論または処理済みの場合はスキップ
+                continue  # Skip inferences from same model or already processed ones
 
             boxB = [comp.X_coordinate, comp.Y_coordinate, comp.width, comp.height]
             if IoU(boxA, boxB) > IoU_Threshold:
-                processed.add(comp)  # 同じ推論を処理済みに追加
+                processed.add(comp)  # Add matching inference to processed set
                 numMatch += 1
-                FP.remove(comp)  # リストから削除
+                FP.remove(comp)  # Remove from list
 
-        processed.add(infer)  # 現在の推論も処理済みに追加
+        processed.add(infer)  # Add current inference to processed set
 
         if numMatch >= MV_Threshold:
             numFP += 1
@@ -101,15 +101,15 @@ def MajorityVoting_FP(dataset, MV_Threshold) -> int:
 
 def MajorityVoting_FN(dataset, MV_Threshold):
     """
-    モデル間で共通するFNを多数決で決定。
-    @param dataset: モデル出力のリスト
-    @param MV_Threshold: 多数決の閾値
-    @return numFN: モデル間で共通するFNの数
+    Determine common False Negatives across models using majority voting
+    @param dataset: List of model outputs
+    @param MV_Threshold: Threshold for majority voting
+    @return numFN: Number of common FNs across models
     """
     numModel = len(dataset)
     FN = list()
 
-    # モデルの出力からFNを収集
+    # Collect FNs from model outputs
     for model in dataset:
         for infer in model:
             if infer.conf == 0:
@@ -120,27 +120,25 @@ def MajorityVoting_FN(dataset, MV_Threshold):
     for infer in FN:
         if infer in processed:
             continue
-        numMatch = 1  # 最初の物体自身をカウント
+        numMatch = 1  # Count the initial object itself
         for comp in FN:
             if (infer == comp) or (comp in processed) or (infer.CameraID == comp.CameraID):
                 continue
-            # IoUとカテゴリの一致で判断
+            # Check match by category
             if infer.category == comp.category:
                 numMatch += 1
                 processed.add(comp)
-            # if numMatch == numModel:
-            #     break  # 全モデルでFNと一致した場合は打ち切り
         processed.add(infer)
-        # 閾値以上のモデルで一致した場合にFNとしてカウント
+        # Count as FN if matches meet threshold
         if numMatch >= numModel - MV_Threshold + 1:
             numFN += 1
 
     return numFN
  
 '''
-データセットを受け取り、mvをした後全体の正解率(acc)を返す
-@param: datasets
-@return: acc:float
+Calculate overall accuracy (acc) after majority voting on dataset
+@param: datasets - List of detection results
+@return: acc:float - Accuracy score
 '''
 def accuracy(datasets, mode):
     acc = 0

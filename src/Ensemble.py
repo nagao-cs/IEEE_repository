@@ -89,11 +89,11 @@ def unanimous(dataset):
 
 def Ensemble(dataset, mode):
     '''
-    データセットをアンサンブルする
+    Ensemblig the inferences
     @param datasets:list
     @return list
     '''
-    # 各カメラの推論結果をアンサンブル
+    # set the mode how to ensemble
     if mode == 'affirmative':
         Ensembled = affirmative(dataset)
     elif mode == 'consensus':
